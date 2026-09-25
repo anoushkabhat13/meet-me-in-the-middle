@@ -14,7 +14,6 @@ interface Result {
 
 
 async function generateResults(
-  locA: string, locB: string,
   latA: number, lngA: number,
   latB: number, lngB: number,
   interest: string
@@ -42,7 +41,7 @@ async function generateResults(
 
   const places = await fetchPlaces()
 
-  return places.map((place, i) => ({
+  return places.map((place) => ({
     name: place.displayName ?? 'Unknown place',
     type: interest.trim() || 'Place',
     address: place.formattedAddress ?? '',
@@ -79,7 +78,7 @@ export default function App() {
 
     setLoading(true)
     try {
-      const newResults = await generateResults(locationA, locationB, latA, lngA, latB, lngB, interest)
+      const newResults = await generateResults(latA, lngA, latB, lngB, interest)
       setResults(newResults)
       setScreen('results')
     } catch (err) {

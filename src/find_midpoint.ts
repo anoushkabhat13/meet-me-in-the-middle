@@ -1,6 +1,11 @@
-export function getMidpoint(lat1, lng1, lat2, lng2) {
-    const toRad = (deg) => deg * (Math.PI / 180);
-    const toDeg = (rad) => rad * (180 / Math.PI);
+export function getMidpoint(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number
+)  {
+    const toRad = (deg: number) => deg * (Math.PI / 180)
+    const toDeg = (rad: number) => rad * (180 / Math.PI)
     //midpoint formula obtained from: https://www.movable-type.co.uk/scripts/latlong.html
     //φ1  = radLat1
     const radLat1 = toRad(lat1);
