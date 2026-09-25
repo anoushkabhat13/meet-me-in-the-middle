@@ -263,11 +263,16 @@ function LocationInput({
       //print to console the text inputted in PlaceAutocompleteElement to see what it is
       
 
+
       if (cancelled || !containerRef.current) return // <-- bail if this run is stale
 
       element = new PlaceAutocompleteElement()
       element.placeholder = placeholder
       element.value = value
+
+      element.style.width = '100%'
+      element.style.maxWidth = '100%'
+
       containerRef.current!.appendChild(element)
 
       element.addEventListener('gmp-select', async (e: any) => {
@@ -305,12 +310,24 @@ function LocationInput({
 
   return (
     <div
-      className="flex items-center gap-3 rounded-xl px-4 py-3"
-      style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+      className="flex items-center gap-3 rounded-xl px-4 py-3 w-full min-w-0"
+      style={{
+        background: 'var(--color-surface)',
+        border: '1px solid var(--color-border)'
+      }}
     >
-      <div className="flex-1">
-        <div className="text-xs mb-0.5" style={{ color: 'var(--color-moss)' }}>{label}</div>
-        <div ref={containerRef} />
+      <div className="flex-1 min-w-0">
+        <div
+          className="text-xs mb-0.5"
+          style={{ color: 'var(--color-moss)' }}
+        >
+          {label}
+        </div>
+
+        <div
+          ref={containerRef}
+          className="w-full min-w-0 overflow-hidden"
+        />
       </div>
     </div>
   )
