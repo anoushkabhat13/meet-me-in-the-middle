@@ -9,6 +9,8 @@ interface Result {
   distance: string
   rating: number
   note: string
+  googleMapsUri: string,
+  websiteUri: string
 }
 
 
@@ -27,7 +29,7 @@ async function generateResults(
 
     const { places } = await Place.searchByText({
       textQuery: interest,
-      fields: ['displayName', 'formattedAddress', 'location', 'rating', 'types'],
+      fields: ['displayName', 'formattedAddress', 'location', 'rating', 'types', 'websiteURI', 'googleMapsURI'],
       locationBias: {
         center: { lat: midpoint.lat, lng: midpoint.lng },
         radius: 5000,
@@ -55,6 +57,8 @@ async function generateResults(
   : '',
     rating: place.rating ?? 0,
     note: place.types?.[0]?.replace(/_/g, ' ') ?? '',
+    googleMapsUri: place.googleMapsURI ?? '',
+    websiteUri: place.websiteURI ?? '',
   }))
 }
 
@@ -171,7 +175,6 @@ function InputScreen({
           <LocationInput
             label="Your location"
             placeholder="e.g. Brooklyn, NY"
-            value={locationA}
             onChange={onChangeA}
           />
 
@@ -184,7 +187,6 @@ function InputScreen({
           <LocationInput
             label="Their location"
             placeholder="e.g. Hoboken, NJ"
-            value={locationB}
             onChange={onChangeB}
           />
         </div>
@@ -208,6 +210,8 @@ function InputScreen({
               </div>
 
               <input
+                id="interest"
+                name="interest"
                 type="text"
                 placeholder="e.g. coffee shop, park, sushi restaurant"
                 value={interest}
@@ -242,71 +246,72 @@ function InputScreen({
 function LocationInput({
   label,
   placeholder,
-  value,
   onChange,
 }: {
   label: string
   placeholder: string
-  value: string
   onChange: (address: string, lat: number, lng: number) => void
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!containerRef.current) return
-    let element: google.maps.places.PlaceAutocompleteElement
+    let element: google.maps.places.PlaceAutocompleteElement | undefined
     let cancelled = false
 
     async function setup() {
       await loadPlaces()
-      const { PlaceAutocompleteElement } = await google.maps.importLibrary('places') as google.maps.PlacesLibrary
-      //print to console the text inputted in PlaceAutocompleteElement to see what it is
-      
 
+      if (cancelled || !containerRef.current) return
 
-      if (cancelled || !containerRef.current) return // <-- bail if this run is stale
+      const { PlaceAutocompleteElement } =
+        await google.maps.importLibrary('places') as google.maps.PlacesLibrary
+
+      if (cancelled || !containerRef.current) return
 
       element = new PlaceAutocompleteElement()
+
+      element.id = label === 'Your location'
+        ? 'location-a'
+        : 'location-b'
+
+      element.name = label === 'Your location'
+        ? 'locationA'
+        : 'locationB'
+
       element.placeholder = placeholder
-      element.value = value
 
       element.style.width = '100%'
       element.style.maxWidth = '100%'
 
-      containerRef.current!.appendChild(element)
+      containerRef.current.innerHTML = ''
+      containerRef.current.appendChild(element)
 
       element.addEventListener('gmp-select', async (e: any) => {
         const place = e.placePrediction.toPlace()
-        await place.fetchFields({ fields: ['formattedAddress', 'location'] })
-        console.log('Selected place:', place.formattedAddress) // Log the selected place's formatted address
-        //find latitude and longitude of place and log it to console
+
+        await place.fetchFields({
+          fields: ['formattedAddress', 'location']
+        })
+
         const location = place.location
 
-        if (location) {
-          console.log('Latitude:', location.lat())
-          console.log('Longitude:', location.lng())
-        }
-        
-        if (place.formattedAddress && place.location) {
-          const lat = place.location.lat()
-          const lng = place.location.lng()
-
+        if (place.formattedAddress && location) {
           onChange(
             place.formattedAddress,
-            lat,
-            lng
+            location.lat(),
+            location.lng()
           )
         }
-              
       })
     }
 
     setup()
+
     return () => {
-    cancelled = true
-    element?.remove()
-  }
-  }, [placeholder, onChange])
+      cancelled = true
+      element?.remove()
+    }
+  }, [placeholder, label, onChange])
 
   return (
     <div
@@ -326,13 +331,13 @@ function LocationInput({
 
         <div
           ref={containerRef}
-          className="w-full min-w-0 overflow-hidden"
+          className="w-full min-w-0"
+          style={{ overflow: 'visible' }}
         />
       </div>
     </div>
   )
 }
-
 
 
 function ResultsScreen({ locationA, locationB, interest, results, onBack }: {
@@ -387,10 +392,15 @@ function ResultsScreen({ locationA, locationB, interest, results, onBack }: {
 
 function ResultCard({ result, rank }: { result: Result; rank: number }) {
   const stars = '★'.repeat(Math.round(result.rating)) + '☆'.repeat(5 - Math.round(result.rating))
+  //on click of button, go to google maps with the address of the result using result.googleMapsURI
+  const handleClick = () => {
+    window.open(result.googleMapsUri, '_blank')
+  }
 
   return (
     <div
       className="rounded-xl p-4 transition-all duration-150 hover:scale-[1.01] cursor-pointer"
+      onClick={handleClick}
       style={{
         background: 'var(--color-surface)',
         border: '1px solid var(--color-border)',

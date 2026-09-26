@@ -28,3 +28,9 @@ body {
 }
 
 ::-webkit-scrollbar { display: none; }
+
+gmp-place-autocomplete {
+  width: 100%;
+  display: block;
+  color-scheme: light;
+}
